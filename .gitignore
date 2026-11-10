@@ -1,0 +1,10 @@
+# Virtual environments
+.envirtual/
+
+# Test and coverage artifacts
+pytest/__pycache__/
+.pytest_cache/
+
+# Local environment variables and secrets
+.env
+app/.env
