@@ -56,62 +56,36 @@ Présente les résultats de manière claire et concise.
 """
 
 
-# def ask_assistant(question: str, user_id: int):
-
-#     # Création des outils propres à l'utilisateur
-#     tools = create_order_tools(user_id)
-
-#     # Création de l'agent
-#     agent = create_agent(
-#         model=llm,
-#         tools=tools,
-#         system_prompt=SYSTEM_PROMPT
-#     )
-
-#     # Exécution de la question
-#     result = agent.invoke(
-#         {
-#             "messages": [
-#                 {
-#                     "role": "user",
-#                     "content": question
-#                 }
-#             ]
-#         },
-#         config={
-#             "recursion_limit": 8
-#         }
-#     )
-
-#     # Récupération du dernier message
-#     answer = result["messages"][-1].content
-
-#     return answer
-
-
 def ask_assistant(question: str, user_id: int):
+
+    # Création des outils propres à l'utilisateur
     tools = create_order_tools(user_id)
 
-    print("Outils disponibles :", [tool.name for tool in tools])
-
+    # Création de l'agent
     agent = create_agent(
         model=llm,
         tools=tools,
         system_prompt=SYSTEM_PROMPT
     )
 
+    # Exécution de la question
     result = agent.invoke(
-        {"messages": [{"role": "user", "content": question}]},
-        config={"recursion_limit": 8}
+        {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": question
+                }
+            ]
+        },
+        config={
+            "recursion_limit": 8
+        }
     )
 
-    print("\n--- HISTORIQUE DES MESSAGES ---")
+    # Récupération du dernier message
+    answer = result["messages"][-1].content
+    print("Réponse finale de l'assistant dans assistant_service.py :", answer)
+    return answer
 
-    for message in result["messages"]:
-        print("Type :", type(message).__name__)
-        print("Contenu :", message.content)
 
-        if hasattr(message, "tool_calls"):
-            print("Appels d'outils :", message.tool_calls)
-
-    return result["messages"][-1].content

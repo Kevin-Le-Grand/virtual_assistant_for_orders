@@ -65,7 +65,7 @@ def chat():
             question=question,
             user_id=user_id
         )
-
+        print("Réponse de l'assistant :", answer)
         return jsonify({
             "answer": answer
         }), 200
