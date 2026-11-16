@@ -66,6 +66,8 @@ def create_order_tools(user_id):
 
         print("Nombre de commandes :", count)
 
+        return count
+
     @tool
     def get_orders_by_status(status: str, limit: int = 10):
         """
