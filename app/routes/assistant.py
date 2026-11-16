@@ -26,7 +26,6 @@ def chat():
 
     # Récupération de l'identité depuis le JWT vérifié
     user_identity = get_jwt_identity()
-    print("Identité utilisateur récupérée :", user_identity)
 
     # Vérification du type de l'identifiant
     try:
@@ -60,12 +59,10 @@ def chat():
         }), 400
 
     try:
-        print("Appel de l'assistant avec la question :", question)
         answer = ask_assistant(
             question=question,
             user_id=user_id
         )
-        print("Réponse de l'assistant :", answer)
         return jsonify({
             "answer": answer
         }), 200

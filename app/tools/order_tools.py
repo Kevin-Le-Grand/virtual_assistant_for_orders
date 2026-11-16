@@ -1,7 +1,4 @@
-
 # app/tools/order_tools.py
-
-from itertools import count
 
 from langchain.tools import tool
 from sqlalchemy import func
@@ -17,8 +14,14 @@ def create_order_tools(user_id):
     contrôlé ou fourni par le LLM.
     """
 
+    def _base_query(status: str | None = None):
+        query = Order.query.filter(Order.user_id == user_id)
+        if status:
+            query = query.filter(func.lower(Order.status) == status.lower())
+        return query
+
     @tool
-    def get_orders(status: str = None, limit: int = 10):
+    def get_orders(status: str | None = None, limit: int = 10):
         """
         Retourne les dernières commandes de l'utilisateur.
 
@@ -27,76 +30,28 @@ def create_order_tools(user_id):
             limit: Nombre de commandes à retourner (maximum 20).
         """
         print("========== TOOL get_orders APPELÉ ==========")
-        print("User ID :", user_id)
-        print("Status :", status)
         limit = max(1, min(limit, 20))
 
         orders = (
-            Order.query
-            .filter_by(user_id=user_id)
+            _base_query(status)
             .order_by(Order.date_purchase.desc())
             .limit(limit)
             .all()
         )
 
-        return [
-            order.to_dict()
-            for order in orders
-        ]
+        return [order.to_dict() for order in orders]
 
     @tool
     def get_orders_count(status: str | None = None) -> int:
         """
         Retourne le nombre de commandes de l'utilisateur.
 
-        Si aucun statut n'est fourni, retourne le nombre total
-        de commandes.
-
-        Si un statut est fourni, retourne le nombre de commandes
-        correspondant à ce statut.
+        Si aucun statut n'est fourni, retourne le nombre total.
+        Sinon, retourne le nombre de commandes ayant ce statut.
         """
         print("--- TOOL GET_ORDERS_COUNT APPELÉ ---")
-
-        query = Order.query.filter_by(user_id=user_id)
-
-        if status is not None:
-            query = query.filter_by(status=status)
-
-        count = query.count()
-
-        print("Nombre de commandes :", count)
-
-        return count
-
-    @tool
-    def get_orders_by_status(status: str, limit: int = 10):
-        """
-        Retourne les commandes correspondant à un statut.
-
-        Args:
-            status: Statut recherché.
-            limit: Nombre maximum de résultats (20 maximum).
-        """
-        print("========== TOOL get_orders_by_status APPELÉ ==========")
-        print("User ID :", user_id)
-        print("Status :", status)
-        limit = max(1, min(limit, 20))
-
-        orders = (
-            Order.query
-            .filter(
-                Order.user_id == user_id,
-                func.lower(Order.status) == status.lower()
-            )
-            .order_by(Order.date_purchase.desc())
-            .limit(limit)
-            .all()
-        )
-
-        return [
-            order.to_dict()
-            for order in orders
-        ]
+        total = _base_query(status).count()
+        return total
 
     @tool
     def get_order_by_id(order_id: int):
@@ -107,15 +62,10 @@ def create_order_tools(user_id):
             order_id: Identifiant de la commande.
         """
         print("========== TOOL get_order_by_id APPELÉ ==========")
-        order = Order.query.filter_by(
-            id=order_id,
-            user_id=user_id
-        ).first()
+        order = Order.query.filter_by(id=order_id, user_id=user_id).first()
 
         if not order:
-            return {
-                "error": "Commande introuvable."
-            }
+            return {"error": "Commande introuvable."}
 
         return order.to_dict()
 
@@ -123,39 +73,29 @@ def create_order_tools(user_id):
     def get_orders_statistics():
         """
         Retourne les statistiques des commandes de l'utilisateur :
-        nombre total, nombre par statut et nombre de commandes livrées.
+        nombre total, nombre par statut, commandes livrées, expédiées
+        et non expédiées.
         """
         print("========== TOOL get_orders_statistics APPELÉ ==========")
-        total = Order.query.filter_by(
-            user_id=user_id
-        ).count()
+        base = Order.query.filter(Order.user_id == user_id)
 
-        delivered = Order.query.filter(
-            Order.user_id == user_id,
-            Order.date_delivered.isnot(None)
-        ).count()
-
-        shipped = Order.query.filter(
-            Order.user_id == user_id,
-            Order.date_shipped.isnot(None)
-        ).count()
-
-        pending = Order.query.filter(
-            Order.user_id == user_id,
-            Order.date_shipped.is_(None)
-        ).count()
+        by_status = dict(
+            base.with_entities(Order.status, func.count(Order.id))
+            .group_by(Order.status)
+            .all()
+        )
 
         return {
-            "total_orders": total,
-            "delivered_orders": delivered,
-            "shipped_orders": shipped,
-            "not_shipped_orders": pending
+            "total_orders": base.count(),
+            "orders_by_status": by_status,
+            "delivered_orders": base.filter(Order.date_delivered.isnot(None)).count(),
+            "shipped_orders": base.filter(Order.date_shipped.isnot(None)).count(),
+            "not_shipped_orders": base.filter(Order.date_shipped.is_(None)).count(),
         }
 
     return [
         get_orders,
         get_orders_count,
-        get_orders_by_status,
         get_order_by_id,
-        get_orders_statistics
+        get_orders_statistics,
     ]

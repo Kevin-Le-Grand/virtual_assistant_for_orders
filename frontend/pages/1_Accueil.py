@@ -19,7 +19,7 @@ API_URL = "http://localhost:5000/api/assistant/"
 # --------------------------------------------------
 
 if "access_token" not in st.session_state:
-    st.switch_page("app.py")
+    st.switch_page("chatbot.py")
 
 token = st.session_state["access_token"]
 user = st.session_state["user"]
@@ -51,7 +51,7 @@ with st.sidebar:
 
     if st.button("🚪 Déconnexion", use_container_width=True):
         st.session_state.clear()
-        st.switch_page("app.py")
+        st.switch_page("chatbot.py")
 
 # --------------------------------------------------
 # PAGE PRINCIPALE
@@ -128,7 +128,7 @@ if question:
                         "Veuillez vous reconnecter."
                     )
 
-                    st.switch_page("app.py")
+                    st.switch_page("chatbot.py")
 
                 elif response.status_code == 200:
 
