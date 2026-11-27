@@ -20,6 +20,8 @@ def create_order_tools(user_id):
             query = query.filter(func.lower(Order.status) == status.lower())
         return query
 
+
+
     @tool
     def get_orders(status: str | None = None, limit: int = 10):
         """
@@ -53,49 +55,8 @@ def create_order_tools(user_id):
         total = _base_query(status).count()
         return total
 
-    @tool
-    def get_order_by_id(order_id: int):
-        """
-        Recherche une commande par son identifiant.
-
-        Args:
-            order_id: Identifiant de la commande.
-        """
-        print("========== TOOL get_order_by_id APPELÉ ==========")
-        order = Order.query.filter_by(id=order_id, user_id=user_id).first()
-
-        if not order:
-            return {"error": "Commande introuvable."}
-
-        return order.to_dict()
-
-    @tool
-    def get_orders_statistics():
-        """
-        Retourne les statistiques des commandes de l'utilisateur :
-        nombre total, nombre par statut, commandes livrées, expédiées
-        et non expédiées.
-        """
-        print("========== TOOL get_orders_statistics APPELÉ ==========")
-        base = Order.query.filter(Order.user_id == user_id)
-
-        by_status = dict(
-            base.with_entities(Order.status, func.count(Order.id))
-            .group_by(Order.status)
-            .all()
-        )
-
-        return {
-            "total_orders": base.count(),
-            "orders_by_status": by_status,
-            "delivered_orders": base.filter(Order.date_delivered.isnot(None)).count(),
-            "shipped_orders": base.filter(Order.date_shipped.isnot(None)).count(),
-            "not_shipped_orders": base.filter(Order.date_shipped.is_(None)).count(),
-        }
 
     return [
         get_orders,
         get_orders_count,
-        get_order_by_id,
-        get_orders_statistics,
     ]
